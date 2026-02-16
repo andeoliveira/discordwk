@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Integração Mercado Livre → Discord</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen;
+      background: linear-gradient(135deg, #ffe600, #fff2a8);
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      background: #ffffff;
+      padding: 32px 40px;
+      border-radius: 16px;
+      max-width: 520px;
+      width: 90%;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 1.8rem;
+    }
+
+    p {
+      font-size: 1rem;
+      line-height: 1.6;
+      margin: 16px 0;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 8px 14px;
+      background: #5865F2;
+      color: #fff;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .footer {
+      margin-top: 24px;
+      font-size: 0.8rem;
+      color: #777;
+    }
+
+    .ok {
+      margin-top: 20px;
+      font-weight: bold;
+      color: #2ecc71;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>🔔 Integração ativa</h1>
+
+    <p>
+      Este serviço recebe notificações de vendas do
+      <strong>Mercado Livre</strong> e envia alertas automáticos
+      para um canal do <strong>Discord</strong>.
+    </p>
+
+    <div class="badge">Webhook rodando na Vercel 🚀</div>
+
+    <div class="ok">
+      ✅ Status: Online
+    </div>
+
+    <div class="footer">
+      Endpoint ativo em:<br />
+      <code>/api/mercadolivre-webhook</code>
+    </div>
+  </div>
+</body>
+</html>
