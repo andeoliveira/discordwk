@@ -1,0 +1,16 @@
+# Copilot User Instructions
+- Always use TypeScript instead of JavaScript.
+- Prefer async/await over callbacks.
+- Follow ESLint rules (no unused imports, always use const).
+- For private fields, start the field name with an underscore (_).
+- Use Tailwind CSS for styling instead of custom CSS.
+- When adding new dependencies, make sure to add them to the `package.json` file and run `npm install`.
+- For environment variables, use the `dotenv` package and create a `.env` file in the root of the project.
+- When writing code, make sure to include JSDoc comments for functions and classes.
+- Always write unit tests for new features and bug fixes.
+- When committing code, write clear and concise commit messages that describe the changes made.
+- Before pushing code, make sure to run all tests and ensure they pass.
+- When working on a feature branch, regularly pull changes from the main branch to avoid merge conflicts.
+- If you encounter any issues or have questions, don't hesitate to ask for help from the team.
+- Always review your code for readability and maintainability before submitting a pull request.
+- Aways use tags assesibility when creating UI components, such as aria-labels and role attributes.
