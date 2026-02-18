@@ -1,5 +1,8 @@
+import { Redis } from '@upstash/redis'
+import { getValidAccessToken } from '../../lib/ml-token'
+
 export default async function handler(req, res) {
-  // Load .env.local only in non-production to avoid affecting Vercel production
+  // 🔹 Em Vercel NÃO é necessário dotenv em produção
   if (process.env.NODE_ENV !== 'production') {
     try {
       const dotenv = await import('dotenv');
@@ -9,13 +12,14 @@ export default async function handler(req, res) {
     }
   }
 
-  console.log("DISCORD_WEBHOOK_URL:", process.env.DISCORD_WEBHOOK_URL);
-
   // Mercado Livre envia POST
   if (req.method !== "POST") {
     console.log("Método não permitido:", req.method);
     return res.status(200).end(); // ML exige 200 rápido
   }
+
+  // 🔹 responde IMEDIATAMENTE
+  //res.status(200).json({ received: true });
 
   try {
     console.log("===== WEBHOOK MERCADO LIVRE =====")
@@ -32,37 +36,59 @@ export default async function handler(req, res) {
       return
     }
 
-    // Só processa pedidos
+    // 🔹 Só processa eventos de pedidos
     if (!topic || !resource || !topic.includes("orders")) {
       console.warn("Webhook recebido, mas não é de pedido:", topic);
       return res.status(200).end();
     }
+    const orderId = resource.split("/").pop();
+    /*const accessToken = await getValidAccessToken();
+    
+    if (!accessToken) {
+      console.warn("Access token não encontrado no Redis");
+    }
+    console.log("Access token obtido:", !!accessToken);
 
+    // 🔹 Extrai o ID do pedido do recurso
     const orderId = resource.split("/").pop();
 
-    const message = {
-      content: `🛒 **Nova venda no Mercado Livre!**\n📦 Pedido: ${orderId}`
-    };
+    // busca detalhes do pedido
+    const orderResponse = await fetch(
+      `https://api.mercadolibre.com/orders/${orderId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken.access_token}`
+        }
+      }
+    )
 
+    const order = await orderResponse.json()
+
+    if (!orderResponse.ok) {
+      console.error('Erro ao buscar pedido:', order)
+      //return
+    }*/
+    
+     /* ------------------------------------------------------------------
+       Envio para Discord
+    ------------------------------------------------------------------ */
     const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
     if (!webhookUrl) {
       console.error("Discord webhook URL is not set. Skipping notification.");
       return res.status(200).end();
     }
 
-    try {
-      new URL(webhookUrl);
-    } catch (e) {
-      console.error("Invalid DISCORD_WEBHOOK_URL:", webhookUrl, e);
-      return res.status(200).end();
-    }
+    const message = {
+      content: `🛒 **Nova venda no Mercado Livre!**\n📦 Pedido: ${orderId}`
+    };
 
     await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(message)
     });
-    console.log("Notificação enviada para Discord:", message.content);
+
+    console.warn("Notificação enviada para Discord:", message.content);
     return res.status(200).end();
   } catch (err) {
     console.error("Erro webhook:", err);
