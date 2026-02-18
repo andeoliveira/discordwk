@@ -18,12 +18,23 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log("Webhook recebido:", req.body);
-    const { topic, resource } = req.body;
+    console.log("===== WEBHOOK MERCADO LIVRE =====")
+    console.log("Timestamp:", new Date().toISOString())
+    console.log("Method:", req.method)
+    console.log("Headers:", JSON.stringify(req.headers, null, 2))
+    console.warn("Body COMPLETO:", JSON.stringify(req.body, null, 2))
+    console.log("================================")
+   
+    const { topic, resource } = req.body || {};
+
+    if (!topic || !resource) {
+      console.warn("Payload sem topic/resource");
+      return
+    }
 
     // Só processa pedidos
     if (!topic || !resource || !topic.includes("orders")) {
-      console.log("Webhook recebido, mas não é de pedido:", topic);
+      console.warn("Webhook recebido, mas não é de pedido:", topic);
       return res.status(200).end();
     }
 
@@ -54,7 +65,7 @@ export default async function handler(req, res) {
     console.log("Notificação enviada para Discord:", message.content);
     return res.status(200).end();
   } catch (err) {
-    console.error("Erro Mercado Livre webhook:", err);
+    console.error("Erro webhook:", err);
     return res.status(200).end(); // ML não reenvia se não for 200
   }
 }
