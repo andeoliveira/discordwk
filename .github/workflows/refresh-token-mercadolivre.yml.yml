@@ -1,0 +1,16 @@
+name: Cron - Refresh Token
+
+on:
+  schedule:
+    - cron: "0 */2 * * *"   # a cada 1 hora (exato)
+  workflow_dispatch:
+
+jobs:
+  refresh-token:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Call refreshToken endpoint
+        run: |
+          curl -X GET "${{ secrets.CRON_ENDPOINT_URL }}" \
+            -H "Content-Type: application/json"
