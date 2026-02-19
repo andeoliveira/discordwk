@@ -1,4 +1,10 @@
+node_modules/
+dist/
+.env
 .env.local
+/*.log
+coverage/
+/.vercel.env.local
 .vercel
 node_modules
 .env.local

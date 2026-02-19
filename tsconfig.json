@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
+    "module": "CommonJS",
     "moduleResolution": "Node",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -11,7 +11,7 @@
     "outDir": "dist",
     "allowJs": true,
     "checkJs": false,
-    "noEmit": true
+    "noEmit": false
   },
   "include": ["api", "lib", "public"],
   "exclude": ["node_modules", "dist"]
