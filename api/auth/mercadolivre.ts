@@ -10,6 +10,7 @@ export default async function handler(req: any, res: any): Promise<void> {
             } catch (e) {
                 // dotenv not available or failed to load — continue without crashing
             }
+            console.warn('Variáveis de ambiente carregadas do .env.local');
         }
         const params = new URLSearchParams({
             response_type: 'code',

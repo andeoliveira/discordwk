@@ -41,7 +41,7 @@ export default async function handler(req: any, res: any): Promise<void> {
         }
         const orderId = resource.split("/").pop();
 
-        /*
+        
         const accessToken = await getValidAccessToken();
         if (!accessToken) {
             console.warn("Access token não encontrado no Redis");
@@ -52,7 +52,7 @@ export default async function handler(req: any, res: any): Promise<void> {
             `https://api.mercadolibre.com/orders/${orderId}`,
             {
                 headers: {
-                    Authorization: `Bearer ${accessToken.access_token}`
+                    Authorization: `Bearer ${accessToken}`
                 }
             }
         );
@@ -61,7 +61,29 @@ export default async function handler(req: any, res: any): Promise<void> {
             console.error('Erro ao buscar pedido:', order);
             //return
         }
-        */
+
+        if (!order || !order.id) {
+            console.warn("Detalhes do pedido não encontrados ou inválidos:", order);
+            return res.status(200).end();
+        }
+        if (order.status !== "paid") {
+            console.warn("Pedido recebido, mas status não é 'paid':", order.status);
+            return res.status(200).end();
+        }
+
+        const message = {
+            content: `🛒 **Nova venda no Mercado Livre!**\n📦 Pedido: ${orderId}`
+        };
+
+        if (order.order_items && order.order_items.length > 0) {
+            console.warn(`Pedido ${orderId} contém ${order.order_items.length} item(s).`);
+            message.content += `\n📋 Itens:\n` + order.order_items.map((item: any) => {
+                console.log("Processando item:", item);
+                return `- ${item.item.title} (QTD: ${item.quantity})`;
+            }).join('\n');
+        }
+
+        
 
         // Envio para Discord
         const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
@@ -70,9 +92,6 @@ export default async function handler(req: any, res: any): Promise<void> {
             return res.status(200).end();
         }
 
-        const message = {
-            content: `🛒 **Nova venda no Mercado Livre!**\n📦 Pedido: ${orderId}`
-        };
 
         await fetch(webhookUrl, {
             method: "POST",
