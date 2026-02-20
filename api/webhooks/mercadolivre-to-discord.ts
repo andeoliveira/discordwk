@@ -2,6 +2,8 @@
  * Webhook para integração Mercado Livre → Discord (exemplo, ajuste conforme lógica real).
  */
 import { getValidAccessToken } from '../../lib/ml-token';
+import { DiscordNotifier } from './discord';
+import { OrderService } from '../mercadolivre/order';
 
 export default async function handler(req: any, res: any): Promise<void> {
     if (process.env.NODE_ENV !== 'production') {
@@ -21,10 +23,10 @@ export default async function handler(req: any, res: any): Promise<void> {
 
     try {
         console.log("===== WEBHOOK MERCADO LIVRE =====");
-        console.log("Timestamp:", new Date().toISOString());
-        console.log("Method:", req.method);
-        console.log("Headers:", JSON.stringify(req.headers, null, 2));
-        console.warn("Body COMPLETO:", JSON.stringify(req.body, null, 2));
+        console.log("Timestamp: ", new Date().toISOString());
+        console.log("Method: ", req.method);
+        console.log("Headers: ", JSON.stringify(req.headers, null, 2));
+        console.warn("Body: ", JSON.stringify(req.body, null, 2));
         console.log("================================");
 
         const { topic, resource } = req.body || {};
@@ -41,31 +43,21 @@ export default async function handler(req: any, res: any): Promise<void> {
         }
         const orderId = resource.split("/").pop();
 
-        
         const accessToken = await getValidAccessToken();
         if (!accessToken) {
             console.warn("Access token não encontrado no Redis");
         }
         console.log("Access token obtido:", !!accessToken);
+        
         // busca detalhes do pedido
-        const orderResponse = await fetch(
-            `https://api.mercadolibre.com/orders/${orderId}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${accessToken}`
-                }
-            }
-        );
-        const order = await orderResponse.json();
-        if (!orderResponse.ok) {
-            console.error('Erro ao buscar pedido:', order);
-            //return
-        }
+        const order = await new OrderService().get(orderId);
 
-        if (!order || !order.id) {
+        if (!order || !order.ok || !order.id) {
             console.warn("Detalhes do pedido não encontrados ou inválidos:", order);
-            return res.status(200).end();
+            //return res.status(200).end();
         }
+        
+        //filtra somente pelos pedidos pagos
         if (order.status !== "paid") {
             console.warn("Pedido recebido, mas status não é 'paid':", order.status);
             return res.status(200).end();
@@ -77,30 +69,16 @@ export default async function handler(req: any, res: any): Promise<void> {
 
         if (order.order_items && order.order_items.length > 0) {
             console.warn(`Pedido ${orderId} contém ${order.order_items.length} item(s).`);
-            message.content += `\n📋 Itens:\n` + order.order_items.map((item: any) => {
-                console.log("Processando item:", item);
-                return `- ${item.item.title} (QTD: ${item.quantity})`;
+            message.content += `\n👤 Cliente: ${order.buyer.first_name} ${order.buyer.last_name}\n📋 Itens:\n` + order.order_items.map((item: any) => {
+                return `- ${item.item.title} (${item.quantity} - UN)`;
             }).join('\n');
         }
 
-        
-
-        // Envio para Discord
-        const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
-        if (!webhookUrl) {
-            console.error("Discord webhook URL is not set. Skipping notification.");
-            return res.status(200).end();
-        }
-
-
-        await fetch(webhookUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(message)
-        });
-
+        //envia notificação para Discord
+        await new DiscordNotifier().send(message.content);  
         console.warn("Notificação enviada para Discord:", message.content);
         return res.status(200).end();
+        
     } catch (err) {
         console.error("Erro webhook:", err);
         return res.status(200).end(); // ML não reenvia se não for 200
