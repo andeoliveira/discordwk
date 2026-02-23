@@ -4,6 +4,7 @@
 import { getValidAccessToken } from '../../lib/ml-token';
 import { DiscordNotifier } from './discord';
 import { OrderService } from '../mercadolivre/order';
+import { findInRedis } from '../../lib/redis-order';
 
 export default async function handler(req: any, res: any): Promise<void> {
     if (process.env.NODE_ENV !== 'production') {
@@ -52,15 +53,21 @@ export default async function handler(req: any, res: any): Promise<void> {
         // busca detalhes do pedido
         const order = await new OrderService().get(orderId);
 
-        if (!order || !order.ok || !order.id) {
+        if (!order || !order.id) {
             console.warn("Detalhes do pedido não encontrados ou inválidos:", order);
             //return res.status(200).end();
         }
-        
+       
         //filtra somente pelos pedidos pagos
         if (order.status !== "paid") {
             console.warn("Pedido recebido, mas status não é 'paid':", order.status);
             return res.status(200).end();
+        }
+
+        const findRedisOrder = await findInRedis(orderId);
+        if (findRedisOrder) {
+            console.warn("Pedido já processado (webhook duplicado):", orderId);
+            return res.status(200).json({ message: 'Pedido já processado' });
         }
 
         const message = {

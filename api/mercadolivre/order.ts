@@ -1,6 +1,7 @@
 
 import { getValidAccessToken } from '../../lib/ml-token';
-import { get, type IncomingMessage, type ServerResponse } from 'http';
+import { Redis } from '@upstash/redis';
+const redis = Redis.fromEnv();
 
 /**
  * Endpoint para buscar detalhes de um pedido específico do Mercado Livre.
@@ -13,6 +14,7 @@ import { get, type IncomingMessage, type ServerResponse } from 'http';
  * Exemplo: /api/mercadolivre/order?id=123456789
  */
 export class OrderService {
+    
     async get(id: string): Promise<any> {
         const token = await getValidAccessToken();
         console.log("Token válido obtido para /order:", token);
