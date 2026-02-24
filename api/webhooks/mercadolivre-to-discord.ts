@@ -49,36 +49,31 @@ export default async function handler(req: any, res: any): Promise<void> {
             console.warn("Access token não encontrado no Redis");
         }
         console.log("Access token obtido:", !!accessToken);
-        
-        // busca detalhes do pedido
-        const order = await new OrderService().get(orderId);
-
-        if (!order || !order.id) {
-            console.warn("Detalhes do pedido não encontrados ou inválidos:", order);
-            //return res.status(200).end();
-        }
-       
-        //filtra somente pelos pedidos pagos
-        if (order.status !== "paid") {
-            console.warn("Pedido recebido, mas status não é 'paid':", order.status);
-            return res.status(200).end();
-        }
-
-        const findRedisOrder = await findInRedis(orderId);
-        if (findRedisOrder) {
-            console.warn("Pedido já processado (webhook duplicado):", orderId);
-            return res.status(200).json({ message: 'Pedido já processado' });
-        }
 
         const message = {
             content: `🛒 **Nova venda no Mercado Livre!**\n📦 Pedido: ${orderId}`
         };
-
-        if (order.order_items && order.order_items.length > 0) {
-            console.warn(`Pedido ${orderId} contém ${order.order_items.length} item(s).`);
-            message.content += `\n👤 Cliente: ${order.buyer.first_name} ${order.buyer.last_name}\n📋 Itens:\n` + order.order_items.map((item: any) => {
-                return `- ${item.item.title} (${item.quantity} - UN)`;
-            }).join('\n');
+        
+        // busca detalhes do pedido
+        const order = await new OrderService().get(orderId);
+        if (!order || !order.id) {
+            console.warn("Detalhes do pedido não encontrados ou inválidos:", order);
+            //return res.status(200).end();
+        } else {
+            //filtra somente pelos pedidos pagos
+            if (order.status !== "paid") {
+                console.warn("Pedido recebido, mas status não é 'paid':", order.status);
+                return res.status(200).end();
+            } else {
+                const findRedisOrder = await findInRedis(orderId);
+                if (findRedisOrder) {
+                    console.warn("Pedido já processado (webhook duplicado):", orderId);
+                    return res.status(200).json({ message: 'Pedido já processado' });
+                }
+                if (order.order_items && order.order_items.length > 0) {
+                    message.content += formatOrderItems(order);
+                }
+            }
         }
 
         //envia notificação para Discord
@@ -90,4 +85,17 @@ export default async function handler(req: any, res: any): Promise<void> {
         console.error("Erro webhook:", err);
         return res.status(200).end(); // ML não reenvia se não for 200
     }
+}
+
+function formatOrderItems(order: any): string {
+    if (!order.order_items?.length) return '';
+
+    const itemsText = order.order_items
+        .map((item: any) => `- ${item.item.title} (${item.quantity} UN)`)
+        .join('\n');
+
+    return `
+    📅 Data: ${new Date(order.date_created).toLocaleString('pt-BR')}
+    👤 Cliente: ${order.buyer.first_name} ${order.buyer.last_name}
+    📋 Itens:${itemsText}`;
 }
